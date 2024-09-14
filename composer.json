@@ -1,0 +1,54 @@
+{
+    "name": "lakasir/lakasir-module",
+    "description": "",
+    "keywords": [
+        "lakasir",
+        "lakasir-module"
+    ],
+    "homepage": "https://github.com/lakasir/lakasir-module",
+    "license": "GPL-2.0-or-later",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Lakasir",
+            "email": "lakasirapp@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.9"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0",
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lakasir\\LakasirModule\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Lakasir\\LakasirModule\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Lakasir\\LakasirModule\\LakasirModuleServiceProvider"
+            ],
+            "aliases": {
+                "LakasirModule": "Lakasir\\LakasirModule\\LakasirModuleFacade"
+            }
+        }
+    }
+}
