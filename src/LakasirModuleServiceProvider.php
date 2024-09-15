@@ -3,6 +3,8 @@
 namespace Lakasir\LakasirModule;
 
 use Illuminate\Support\ServiceProvider;
+use Lakasir\LakasirModule\Console\Commands\MakeModuleFilamentResource;
+use Lakasir\LakasirModule\Console\Commands\ModuleMakeCommand;
 
 class LakasirModuleServiceProvider extends ServiceProvider
 {
@@ -11,36 +13,15 @@ class LakasirModuleServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        /*
-         * Optional methods to load your package assets
-         */
-        // $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lakasir-module');
-        // $this->loadViewsFrom(__DIR__.'/../resources/views', 'lakasir-module');
-        // $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        // $this->loadRoutesFrom(__DIR__.'/routes.php');
-
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/config.php' => config_path('lakasir-module.php'),
             ], 'config');
 
-            // Publishing the views.
-            /*$this->publishes([
-                __DIR__.'/../resources/views' => resource_path('views/vendor/lakasir-module'),
-            ], 'views');*/
-
-            // Publishing assets.
-            /*$this->publishes([
-                __DIR__.'/../resources/assets' => public_path('vendor/lakasir-module'),
-            ], 'assets');*/
-
-            // Publishing the translation files.
-            /*$this->publishes([
-                __DIR__.'/../resources/lang' => resource_path('lang/vendor/lakasir-module'),
-            ], 'lang');*/
-
-            // Registering package commands.
-            // $this->commands([]);
+            $this->commands([
+                ModuleMakeCommand::class,
+                MakeModuleFilamentResource::class,
+            ]);
         }
     }
 
@@ -49,12 +30,5 @@ class LakasirModuleServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        // Automatically apply the package configuration
-        $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'lakasir-module');
-
-        // Register the main class to use with the facade
-        $this->app->singleton('lakasir-module', function () {
-            return new LakasirModule;
-        });
     }
 }
