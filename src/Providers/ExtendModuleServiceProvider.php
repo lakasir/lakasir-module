@@ -14,7 +14,6 @@ class ExtendModuleServiceProvider extends ServiceProvider
         $moduleName = str($reflector->getNamespaceName())->after('Modules\\');
         $dir = str($reflector->getFileName())->before($reflector->getShortName().'.php');
 
-        // dd(str($moduleName)->snake('-')->value(), $moduleName->value());
         $this->mergeConfigFrom($dir.'/../config/config.php', str($moduleName)->snake('-')->value());
         $this->loadViewsFrom($dir.'/../resources/views', $moduleName->value());
         $this->loadMigrationsFrom($dir.'/../database/migrations');

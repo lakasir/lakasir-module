@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
+use function Laravel\Prompts\text;
+
 class ModuleMakeCommand extends Command
 {
     protected $signature = 'lakasir-module:make';
@@ -19,7 +21,11 @@ class ModuleMakeCommand extends Command
 
     public function handle()
     {
-        $moduleName = Str::studly($this->ask('name'));
+        $moduleName = Str::studly(text(
+            label: 'What module should be created?',
+            placeholder: 'Accounting',
+            required: true
+        ));
         $moduleLowerCase = Str::snake($moduleName);
 
         $stubPath = __DIR__.'/../../../stubs/module-stubs';

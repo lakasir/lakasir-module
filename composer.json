@@ -18,16 +18,21 @@
     ],
     "require": {
         "php": "^8.2",
-        "illuminate/support": "^11.9"
+        "filament/filament": "^3.2",
+        "illuminate/support": "^11.9",
+        "stancl/tenancy": "^3.8"
     },
     "require-dev": {
-        "orchestra/testbench": "^9.0",
+        "orchestra/testbench": "^9.4",
         "phpunit/phpunit": "^10.5"
     },
     "autoload": {
         "psr-4": {
             "Lakasir\\LakasirModule\\": "src"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
