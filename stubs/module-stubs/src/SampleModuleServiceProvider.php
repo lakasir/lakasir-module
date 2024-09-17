@@ -13,7 +13,7 @@ class SampleModuleServiceProvider extends ExtendModuleServiceProvider
         parent::register();
 
         Event::listen(TransactionSucceed::class, function (TransactionSucceed $event) {
-            // dd($event->sellings);
+            // dd($event->selling);
         });
     }
 }

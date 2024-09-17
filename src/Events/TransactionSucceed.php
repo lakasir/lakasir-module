@@ -11,11 +11,14 @@ class TransactionSucceed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public \App\Models\Tenants\Selling $sellings;
+    public $selling;
 
-    public function __construct(\App\Models\Tenants\Selling $sellings)
+    public array $data;
+
+    public function __construct($selling, $data = [])
     {
-        $this->sellings = $sellings;
+        $this->selling = $selling;
+        $this->data = $data;
     }
 
     /**
