@@ -5,6 +5,8 @@ namespace Lakasir\LakasirModule;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Lakasir\LakasirModule\Console\Commands\MakeController;
+use Lakasir\LakasirModule\Console\Commands\MakeModel;
 use Lakasir\LakasirModule\Console\Commands\MakeModuleFilamentResource;
 use Lakasir\LakasirModule\Console\Commands\ModuleMakeCommand;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -25,6 +27,8 @@ class LakasirModuleServiceProvider extends ServiceProvider
             $this->commands([
                 ModuleMakeCommand::class,
                 MakeModuleFilamentResource::class,
+                MakeModel::class,
+                MakeController::class,
             ]);
         }
     }
