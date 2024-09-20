@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Lakasir\LakasirModule\Console\Commands\MakeController;
+use Lakasir\LakasirModule\Console\Commands\MakeMigration;
 use Lakasir\LakasirModule\Console\Commands\MakeModel;
 use Lakasir\LakasirModule\Console\Commands\MakeModuleFilamentResource;
 use Lakasir\LakasirModule\Console\Commands\ModuleMakeCommand;
@@ -29,6 +30,7 @@ class LakasirModuleServiceProvider extends ServiceProvider
                 MakeModuleFilamentResource::class,
                 MakeModel::class,
                 MakeController::class,
+                MakeMigration::class,
             ]);
         }
     }
