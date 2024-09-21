@@ -10,8 +10,6 @@ use Lakasir\LakasirModule\Console\Commands\MakeMigration;
 use Lakasir\LakasirModule\Console\Commands\MakeModel;
 use Lakasir\LakasirModule\Console\Commands\MakeModuleFilamentResource;
 use Lakasir\LakasirModule\Console\Commands\ModuleMakeCommand;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 class LakasirModuleServiceProvider extends ServiceProvider
 {
@@ -79,8 +77,6 @@ class LakasirModuleServiceProvider extends ServiceProvider
                 Route::prefix('modules/'.str(basename($module))->snake('-'))
                     ->middleware([
                         'web',
-                        InitializeTenancyByDomain::class,
-                        PreventAccessFromCentralDomains::class,
                     ])
                     ->group($routeFile);
             }

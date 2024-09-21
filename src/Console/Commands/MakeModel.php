@@ -106,11 +106,12 @@ class MakeModel extends Command
         File::ensureDirectoryExists($moduleFactoryPath);
 
         if (in_array('-m', $options)) {
+            $modelNameMigration = str($modelName)->plural();
             Artisan::call('make:migration', [
-                'name' => "create{$modelName}_table",
+                'name' => "create{$modelNameMigration}_table",
                 '--path' => "modules/{$module}/database/migrations",
             ]);
-            $this->info("Migration for '{$modelName}' created in module '{$module}'.");
+            $this->info("Migration for '{$modelNameMigration}' created in module '{$module}'.");
         }
 
         if (in_array('-c', $options)) {
