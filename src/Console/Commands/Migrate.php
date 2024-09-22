@@ -56,22 +56,16 @@ class Migrate extends Command
 
         if ($options['refresh']) {
             Artisan::call('migrate:refresh', $artisanOptions);
-
-            $this->info("Refresh for module '{$module}' executed successfully.");
-
-            return;
         }
 
         if ($options['rollback']) {
             Artisan::call('migrate:rollback', $artisanOptions);
-
-            $this->info("Rollback for module '{$module}' executed successfully.");
-
-            return;
         }
 
-        Artisan::call('migrate', $artisanOptions);
+        if (! $options['refresh'] && ! $options['rollback']) {
+            Artisan::call('migrate', $artisanOptions);
+        }
 
-        $this->info("Migrations for module '{$module}' executed successfully.");
+        $this->info(Artisan::output());
     }
 }
