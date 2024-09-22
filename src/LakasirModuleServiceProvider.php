@@ -9,6 +9,7 @@ use Lakasir\LakasirModule\Console\Commands\MakeController;
 use Lakasir\LakasirModule\Console\Commands\MakeMigration;
 use Lakasir\LakasirModule\Console\Commands\MakeModel;
 use Lakasir\LakasirModule\Console\Commands\MakeModuleFilamentResource;
+use Lakasir\LakasirModule\Console\Commands\Migrate;
 use Lakasir\LakasirModule\Console\Commands\ModuleMakeCommand;
 
 class LakasirModuleServiceProvider extends ServiceProvider
@@ -29,6 +30,7 @@ class LakasirModuleServiceProvider extends ServiceProvider
                 MakeModel::class,
                 MakeController::class,
                 MakeMigration::class,
+                Migrate::class,
             ]);
         }
     }
