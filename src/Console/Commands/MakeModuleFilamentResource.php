@@ -330,8 +330,4 @@ class MakeModuleFilamentResource extends Command
     {
         return base_path('vendor/filament/filament/stubs');
     }
-
-    protected function generateFilamentResource($module, $resource)
-    {
-    }
 }

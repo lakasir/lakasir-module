@@ -48,9 +48,11 @@ class ModuleMakeCommand extends Command
 
         foreach ($files as $file) {
             $content = File::get($file);
-            $targetFilePath = str_replace('SampleModule', $moduleName, $file->getRelativePathname());
+            $targetFilePath = str_replace('sample-module', str($moduleName)->snake('-'), $file->getRelativePathname());
+            $targetFilePath = str_replace('SampleModule', $moduleName, $targetFilePath);
             $destinationPath = "{$modulePath}/{$targetFilePath}";
             File::ensureDirectoryExists(dirname($destinationPath));
+
             $newContent = str_replace('SampleModule', $moduleName, $content);
             $newContent = str_replace('sample_module', $moduleLowerCase, $newContent);
             File::put($destinationPath, $newContent);
@@ -65,13 +67,10 @@ class ModuleMakeCommand extends Command
 
         $composerJsonPath = "{$modulePath}/composer.json";
 
-        // Ensure the file exists
         $composerContent = File::get($composerJsonPath);
 
-        // Sanitize the content
         $composerContent = $this->cleanComposerJson($composerContent);
 
-        // Try decoding the JSON
         $composerJson = json_decode($composerContent, true);
 
         $composerJson['name'] = Str::of($moduleName)->slug()->prepend('lakasir/');
@@ -95,13 +94,10 @@ class ModuleMakeCommand extends Command
 
     protected function cleanComposerJson($content)
     {
-        // Replace literal \n with actual newlines
         $content = str_replace('\\n', "\n", $content);
 
-        // Fix missing commas between objects (a simplistic fix)
         $content = preg_replace('/}\s*{/', '},{', $content);
 
-        // Remove extra whitespace and newlines
         return trim($content);
     }
 }

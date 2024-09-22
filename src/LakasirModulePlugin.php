@@ -4,7 +4,9 @@ namespace Lakasir\LakasirModule;
 
 use Filament\Contracts\Plugin;
 use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 
 class LakasirModulePlugin implements Plugin
@@ -66,17 +68,24 @@ class LakasirModulePlugin implements Plugin
 
     public function navigationGroups(): array
     {
-        return array_map(function ($module) {
+        $groups = [];
+        foreach ($this->loadModules() as $module) {
             $resources = $this->loadResourceFromModule($module);
             if (count($resources) == 0) {
                 return NavigationGroup::make($module)->items([]);
             }
 
-            $items = array_map(function ($resource) {
-                return $resource::getnavigationitems();
-            }, $resources);
+            /** @var array<NavigationItem> */
+            $navItem = [];
+            /** @var \Filament\Resources\Resource */
+            foreach ($resources as $resource) {
+                $navItem[] = Arr::first($resource::getNavigationItems());
+            }
 
-            return NavigationGroup::make($module)->items(...$items);
-        }, $this->loadModules());
+            $groups[] = NavigationGroup::make($module)
+                ->items($navItem);
+        }
+
+        return $groups;
     }
 }
