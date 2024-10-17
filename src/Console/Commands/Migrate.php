@@ -5,6 +5,7 @@ namespace Lakasir\LakasirModule\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 use function Laravel\Prompts\text;
@@ -47,25 +48,50 @@ class Migrate extends Command
 
             return;
         }
+        $packageName = str(getPackageModuleName($module))->replace('/', '_');
+
+        $migrationTable = 'migrations_'.$packageName;
+        config(['database.migrations' => $migrationTable]);
+
+        if (! Schema::hasTable($migrationTable)) {
+            $this->info("Migration table '{$migrationTable}' does not exist. Creating it...");
+            $this->createMigrationTable($migrationTable);
+        }
 
         $options = $this->option();
 
         $artisanOptions = [
-            '--path' => "modules/{$module}/database/migrations",
+            '--realpath' => true,
+            '--path' => [$migrationPath],
         ];
 
         if ($options['refresh']) {
+            $this->info("Refreshing migrations for module '{$module}'...");
             Artisan::call('migrate:refresh', $artisanOptions);
-        }
-
-        if ($options['rollback']) {
+        } elseif ($options['rollback']) {
+            $this->info("Rolling back migrations for module '{$module}'...");
             Artisan::call('migrate:rollback', $artisanOptions);
-        }
-
-        if (! $options['refresh'] && ! $options['rollback']) {
+        } else {
+            $this->info("Running migrations for module '{$module}'...");
             Artisan::call('migrate', $artisanOptions);
         }
 
         $this->info(Artisan::output());
+    }
+
+    /**
+     * Create the migration table if it doesn't exist.
+     *
+     * @return void
+     */
+    protected function createMigrationTable(string $tableName)
+    {
+        Schema::create($tableName, function ($table) {
+            $table->increments('id');
+            $table->string('migration');
+            $table->integer('batch');
+        });
+
+        $this->info("Migration table '{$tableName}' created successfully.");
     }
 }
