@@ -19,7 +19,7 @@ class ExtendModuleServiceProvider extends ServiceProvider
         $snakeCaseName = str($moduleName)->snake('-')->value();
         $this->mergeConfigFrom("$dir/../config/{$snakeCaseName}.php", $snakeCaseName);
         $this->loadViewsFrom($dir.'/../resources/views', $moduleName->value());
-        // $this->loadTranslationsFrom($dir.'/../lang/', $moduleName->value());
+        $this->loadTranslationsFrom($dir.'/../lang/', $moduleName->value());
     }
 
     public static function getTitle(): string
