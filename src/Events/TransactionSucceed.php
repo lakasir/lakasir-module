@@ -11,6 +11,7 @@ class TransactionSucceed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    /** @var \App\Models\Tenants\Selling */
     public $selling;
 
     public array $data;

@@ -11,6 +11,10 @@ class StockOpnameComplete
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    /**
+     * @param  \App\Models\Tenants\StockOpname  $stockOpname
+     * @return void
+     */
     public function __construct(public $stockOpname, public array $data)
     {
     }

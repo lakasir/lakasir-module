@@ -7,17 +7,19 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class StockOpnameStarted
+class ProductCreated
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * @param  \App\Models\Tenants\StockOpname  $stockOpname
-     * @return void
-     */
-    public function __construct(public $stockOpname, public array $data)
-    {
+    /** @var \App\Models\Tenants\Product */
+    public $product;
 
+    public array $data;
+
+    public function __construct($product, $data = [])
+    {
+        $this->product = $product;
+        $this->data = $data;
     }
 
     /**
@@ -28,7 +30,7 @@ class StockOpnameStarted
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel('transaction-succeed'),
         ];
     }
 }

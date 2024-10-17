@@ -11,6 +11,10 @@ class PurchasingApproved
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    /**
+     * @param  \App\Models\Tenants\Purchasing  $purchasing
+     * @return void
+     */
     public function __construct(public $purchasing, public array $data)
     {
         //
