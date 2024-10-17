@@ -7,6 +7,8 @@ use ReflectionClass;
 
 class ExtendModuleServiceProvider extends ServiceProvider
 {
+    protected static ?string $title = null;
+
     public function register()
     {
         $reflector = new ReflectionClass($this);
@@ -18,5 +20,10 @@ class ExtendModuleServiceProvider extends ServiceProvider
         $this->mergeConfigFrom("$dir/../config/{$snakeCaseName}.php", $snakeCaseName);
         $this->loadViewsFrom($dir.'/../resources/views', $moduleName->value());
         // $this->loadTranslationsFrom($dir.'/../lang/', $moduleName->value());
+    }
+
+    public static function getTitle(): string
+    {
+        return static::$title ?? '';
     }
 }

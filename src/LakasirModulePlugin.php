@@ -68,11 +68,17 @@ class LakasirModulePlugin implements Plugin
         return array_map(fn ($module) => basename($module), File::isDirectory(base_path('modules')) ? File::directories(base_path('modules')) : []);
     }
 
+    private function getServiceProvider($module): string
+    {
+        return "Modules\\$module\\{$module}ServiceProvider";
+    }
+
     public function navigationGroups(): array
     {
         $groups = [];
         foreach ($this->loadModules() as $module) {
             $resources = $this->loadResourceFromModule($module);
+            $serviceProvider = $this->getServiceProvider($module);
             if (count($resources) == 0) {
                 $groups[] = NavigationGroup::make($module)->items([]);
             }
@@ -83,7 +89,8 @@ class LakasirModulePlugin implements Plugin
             foreach ($resources as $resource) {
                 $navItem[] = Arr::first($resource::getNavigationItems());
             }
-            $groups[] = NavigationGroup::make($module)
+
+            $groups[] = NavigationGroup::make($serviceProvider::getTitle() ?? $module)
                 ->items($navItem);
         }
 
