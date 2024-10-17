@@ -328,6 +328,6 @@ class MakeModuleFilamentResource extends Command
 
     protected function getDefaultStubPath(): string
     {
-        return base_path('vendor/filament/filament/stubs');
+        return base_path('vendor/lakasir/lakasir-module/stubs/filament');
     }
 }

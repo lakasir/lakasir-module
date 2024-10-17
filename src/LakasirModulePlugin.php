@@ -20,7 +20,9 @@ class LakasirModulePlugin implements Plugin
     {
         $modules = array_map(fn ($module) => $this->loadResourceFromModule($module), $this->loadModules());
         if (! empty($modules)) {
-            $panel->resources(...$modules);
+            foreach ($modules as $module) {
+                $panel->resources($module);
+            }
         }
     }
 
@@ -72,7 +74,7 @@ class LakasirModulePlugin implements Plugin
         foreach ($this->loadModules() as $module) {
             $resources = $this->loadResourceFromModule($module);
             if (count($resources) == 0) {
-                return NavigationGroup::make($module)->items([]);
+                $groups[] = NavigationGroup::make($module)->items([]);
             }
 
             /** @var array<NavigationItem> */
@@ -81,7 +83,6 @@ class LakasirModulePlugin implements Plugin
             foreach ($resources as $resource) {
                 $navItem[] = Arr::first($resource::getNavigationItems());
             }
-
             $groups[] = NavigationGroup::make($module)
                 ->items($navItem);
         }
