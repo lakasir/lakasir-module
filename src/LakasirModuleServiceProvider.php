@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Lakasir\LakasirModule\Console\Commands\MakeController;
 use Lakasir\LakasirModule\Console\Commands\MakeMigration;
 use Lakasir\LakasirModule\Console\Commands\MakeModel;
+use Lakasir\LakasirModule\Console\Commands\MakeModuleFilamentRelationManager;
 use Lakasir\LakasirModule\Console\Commands\MakeModuleFilamentResource;
 use Lakasir\LakasirModule\Console\Commands\Migrate;
 use Lakasir\LakasirModule\Console\Commands\ModuleMakeCommand;
@@ -27,6 +28,7 @@ class LakasirModuleServiceProvider extends ServiceProvider
             $this->commands([
                 ModuleMakeCommand::class,
                 MakeModuleFilamentResource::class,
+                MakeModuleFilamentRelationManager::class,
                 MakeModel::class,
                 MakeController::class,
                 MakeMigration::class,
