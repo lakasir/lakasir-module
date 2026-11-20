@@ -18,6 +18,13 @@ class LakasirModulePlugin implements Plugin
 
     public function register(Panel $panel): void
     {
+        // The plugin manager page ships with the runtime, so every application
+        // that installs this package can manage its modules without wiring a
+        // page of its own.
+        $panel->pages([
+            \Lakasir\LakasirModule\Filament\Pages\Modules::class,
+        ]);
+
         $modules = array_map(fn ($module) => $this->loadResourceFromModule($module), $this->loadModules());
         if (! empty($modules)) {
             foreach ($modules as $module) {

@@ -20,10 +20,14 @@ class LakasirModuleServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // The plugin system: archives, registry, per-tenant migrations.
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'lakasir-module');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/config.php' => config_path('lakasir-module.php'),
-            ], 'config');
+            ], 'lakasir-module-config');
 
             $this->commands([
                 ModuleMakeCommand::class,
@@ -39,6 +43,8 @@ class LakasirModuleServiceProvider extends ServiceProvider
 
     public function register()
     {
+        $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'lakasir-module');
+
         $modules = File::isDirectory(base_path('modules')) ? File::directories(base_path('modules')) : [];
 
         foreach ($modules as $module) {

@@ -17,9 +17,12 @@
         }
     ],
     "require": {
-        "php": "^8.1",
+        "ext-zip": "*",
         "filament/filament": "^3.2",
-        "illuminate/support": "^11.9"
+        "illuminate/process": "^11.9",
+        "illuminate/support": "^11.9",
+        "livewire/livewire": "^3.0",
+        "php": "^8.3"
     },
     "require-dev": {
         "orchestra/testbench": "^9.4",
@@ -41,7 +44,6 @@
     "scripts": {
         "test": "vendor/bin/phpunit",
         "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
-
     },
     "config": {
         "sort-packages": true
@@ -49,6 +51,7 @@
     "extra": {
         "laravel": {
             "providers": [
+                "Lakasir\\LakasirModule\\LakasirModuleServiceProvider",
                 "Lakasir\\LakasirModule\\LakasirModuleServiceProvider"
             ],
             "aliases": {
