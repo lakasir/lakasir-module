@@ -14,7 +14,28 @@
   </div>
 
   @if ($tab === 'installed')
-    @if (empty($modules))
+    @php($registryChecked = $this->registryChecked())
+
+    <div class="mb-3 flex justify-end">
+      <x-filament::button size="xs" color="gray" outlined wire:click="refreshRegistry"
+                          wire:loading.attr="disabled" wire:target="refreshRegistry">
+        {{ $registryChecked ? __('Refresh the registry') : __('Check for updates') }}
+      </x-filament::button>
+    </div>
+
+    @if ($catalogError)
+      <x-filament::section>
+        <p class="text-sm text-danger-600 dark:text-danger-400">{{ $catalogError }}</p>
+      </x-filament::section>
+    @endif
+
+    @if (! $registryChecked)
+      <x-filament::section>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          {{ __('The module registry has not been read yet, so installed modules cannot show a newer release.') }}
+        </p>
+      </x-filament::section>
+    @elseif (empty($modules))
       <x-filament::section>
         <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('No module installed yet.') }}</p>
       </x-filament::section>
@@ -34,7 +55,15 @@
             <dl class="space-y-1 text-sm">
               <div class="flex justify-between gap-4">
                 <dt class="text-gray-500 dark:text-gray-400">{{ __('Version') }}</dt>
-                <dd>{{ $module['version'] }}</dd>
+                <dd>
+                  @if ($module['update_available'])
+                    <span class="text-gray-500 dark:text-gray-400">{{ $module['version'] }}</span>
+                    <span aria-hidden="true">→</span>
+                    <span class="font-semibold">{{ $module['registry_version'] }}</span>
+                  @else
+                    {{ $module['version'] }}
+                  @endif
+                </dd>
               </div>
               <div class="flex justify-between gap-4">
                 <dt class="text-gray-500 dark:text-gray-400">{{ __('Source') }}</dt>
@@ -76,16 +105,52 @@
               </div>
             </dl>
 
-            @if ($module['removable'])
-              <div class="mt-4">
-                <x-filament::button
-                  color="danger"
-                  size="xs"
-                  outlined
-                  wire:click="uninstall({{ $module['plugin_id'] }})"
-                  wire:confirm="{{ __('Remove this module and its files?') }}">
-                  {{ __('Remove') }}
-                </x-filament::button>
+            @php($actions = $module['update_available'] || $module['rollback_available'] || $module['removable'] || $module['update_blocked'] === 'git')
+
+            @if ($actions)
+              <div class="mt-4 flex flex-wrap items-center gap-2">
+                @if ($module['update_available'])
+                  <x-filament::button
+                    size="xs"
+                    wire:click="update({{ $module['plugin_id'] }})"
+                    wire:loading.attr="disabled"
+                    wire:confirm="{{ __('Update this module to :version? Its migrations run once for every company.', ['version' => $module['registry_version']]) }}">
+                    {{ __('Update') }}
+                  </x-filament::button>
+                @endif
+
+                @if ($module['rollback_available'])
+                  <x-filament::button
+                    color="gray"
+                    size="xs"
+                    outlined
+                    wire:click="rollback({{ $module['plugin_id'] }})"
+                    wire:loading.attr="disabled"
+                    wire:confirm="{{ __('Restore the previous files of this module? Its database tables are left untouched.') }}">
+                    {{ __('Rollback') }}
+                  </x-filament::button>
+                @endif
+
+                @if ($module['update_blocked'] === 'git')
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ __('Update with git in modules/:folder.', ['folder' => $module['name']]) }}
+                  </span>
+                @elseif ($module['update_blocked'] === 'app')
+                  <span class="text-xs text-warning-600 dark:text-warning-400">
+                    {{ __('Needs Lakasir :version or newer.', ['version' => $module['min_app_version']]) }}
+                  </span>
+                @endif
+
+                @if ($module['removable'])
+                  <x-filament::button
+                    color="danger"
+                    size="xs"
+                    outlined
+                    wire:click="uninstall({{ $module['plugin_id'] }})"
+                    wire:confirm="{{ __('Remove this module and its files?') }}">
+                    {{ __('Remove') }}
+                  </x-filament::button>
+                @endif
               </div>
             @endif
           </x-filament::section>
@@ -150,8 +215,8 @@
       @php($catalog = $this->getCatalog())
 
       <div class="mb-3 flex justify-end">
-        <x-filament::button size="xs" color="gray" outlined wire:click="loadCatalog"
-                            wire:loading.attr="disabled" wire:target="loadCatalog">
+        <x-filament::button size="xs" color="gray" outlined wire:click="refreshRegistry"
+                            wire:loading.attr="disabled" wire:target="refreshRegistry">
           {{ __('Refresh') }}
         </x-filament::button>
       </div>

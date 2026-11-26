@@ -3,14 +3,15 @@
 namespace Lakasir\LakasirModule\Filament\Pages;
 
 use App\Models\Company;
-use Lakasir\LakasirModule\Models\Plugin;
-use Lakasir\LakasirModule\Plugins\PluginArchiveInspector;
-use Lakasir\LakasirModule\Plugins\PluginInstaller;
-use Lakasir\LakasirModule\Plugins\PluginRegistry;
-
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Lakasir\LakasirModule\Models\Plugin;
+use Lakasir\LakasirModule\Plugins\MigrationLedger;
+use Lakasir\LakasirModule\Plugins\PluginArchiveInspector;
+use Lakasir\LakasirModule\Plugins\PluginInstaller;
+use Lakasir\LakasirModule\Plugins\PluginRegistry;
 use Livewire\Attributes\Url;
 use Livewire\WithFileUploads;
 use Throwable;
@@ -62,39 +63,119 @@ class Modules extends Page
      * Installed modules, derived from the `modules/` directory the
      * lakasir-module runtime scans.
      *
-     * @return array<int, array{name: string, package: string, title: string, version: string, provider: string, has_filament: bool, source: string, migrated: bool}>
+     * @return array<int, array<string, mixed>>
      */
     public function getModules(): array
     {
         $plugins = Plugin::query()->with('companyPlugins')->get()->keyBy('folder_name');
         $companyId = Company::currentId();
+        $registry = collect($this->cachedRegistry())->keyBy('folder');
+        $appVersion = $this->appVersion();
 
         return collect(getModules())
-            ->map(function (string $path) use ($plugins, $companyId): array {
+            ->map(function (string $path) use ($plugins, $companyId, $registry, $appVersion): array {
                 $folder = basename($path);
                 $composer = json_decode(@file_get_contents($path.'/composer.json') ?: '{}', true) ?: [];
                 $provider = "Modules\\{$folder}\\{$folder}ServiceProvider";
                 $plugin = $plugins->get($folder);
+                $version = getModuleVersion($path, $composer['version'] ?? null);
+                $git = isModuleDevCheckout($path);
+                $entry = $registry->get($folder);
+                $registryVersion = is_array($entry) ? ($entry['version'] ?? null) : null;
 
                 return [
                     'name' => $folder,
                     'package' => $composer['name'] ?? '-',
-                    'version' => $composer['version'] ?? '-',
+                    'version' => $version,
                     'provider' => $provider,
                     'title' => class_exists($provider) && method_exists($provider, 'getTitle')
                         ? ($provider::getTitle() ?: $folder)
                         : $folder,
                     'has_filament' => is_dir($path.'/src/Filament/Resources'),
-                    'source' => is_dir($path.'/.git') ? 'git' : ($plugin?->source ?? 'local'),
+                    'source' => $git ? 'git' : ($plugin?->source ?? 'local'),
                     'migrated' => $plugin?->companyPlugins->firstWhere('company_id', $companyId)?->isMigrated() ?? false,
                     'plugin_id' => $plugin?->getKey(),
                     'removed' => $plugin?->removed_at !== null,
-                    'removable' => $plugin !== null && ! is_dir($path.'/.git'),
+                    'removable' => $plugin !== null && ! $git,
+                    'registry_version' => $registryVersion,
+                    'min_app_version' => is_array($entry) ? ($entry['min_app_version'] ?? null) : null,
+                    // A checkout's version is its tag; releasing it is git's job.
+                    'update_available' => ! $git
+                        && $plugin !== null
+                        && is_string($registryVersion)
+                        && $this->isNewer($registryVersion, $this->runningVersion($version, $plugin, $composer)),
+                    'update_blocked' => $git
+                        ? 'git'
+                        : ($plugin === null ? 'unmanaged' : $this->blockedByApp($entry, $appVersion)),
+                    'rollback_available' => ! $git && is_dir(PluginInstaller::backupPath($folder)),
                 ];
             })
             ->sortBy('name')
             ->values()
             ->all();
+    }
+
+    /**
+     * The registry index as far as the cache knows it, without a network call.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function cachedRegistry(): array
+    {
+        return app(PluginRegistry::class)->cached() ?? [];
+    }
+
+    /**
+     * Running version of an installed module: the newer of its files and the
+     * version its install recorded. The folder name is what the registry keys
+     * on, so the comparison is per release, not per checkout tag.
+     */
+    private function runningVersion(string $diskVersion, ?Plugin $plugin, array $composer): string
+    {
+        $installed = $plugin?->version ?: ($composer['version'] ?? null);
+
+        return $this->isNewer((string) $installed, $diskVersion) ? (string) $installed : $diskVersion;
+    }
+
+    private function isNewer(string $candidate, string $current): bool
+    {
+        $normalize = fn (string $version) => ltrim(trim($version), 'vV');
+
+        if (blank($current) || $current === '-') {
+            return true;
+        }
+
+        return version_compare($normalize($candidate), $normalize($current), '>');
+    }
+
+    /**
+     * Why a registry release cannot be installed on this app version, or null.
+     *
+     * `version.txt` is the same source the app updater reads; a missing file or
+     * `Development` means a local checkout, where every module is allowed.
+     */
+    private function blockedByApp(mixed $entry, ?string $appVersion): ?string
+    {
+        $required = is_array($entry) ? ($entry['min_app_version'] ?? null) : null;
+
+        if (! is_string($required) || $required === '' || $appVersion === null) {
+            return null;
+        }
+
+        return version_compare($appVersion, ltrim($required, 'vV'), '<') ? 'app' : null;
+    }
+
+    private function appVersion(): ?string
+    {
+        $file = base_path('version.txt');
+
+        if (! is_file($file)) {
+            return null;
+        }
+
+        $version = trim((string) file_get_contents($file));
+
+        return filled($version) && $version !== 'Development' ? ltrim($version, 'vV') : null;
     }
 
     /**
@@ -134,12 +215,26 @@ class Modules extends Page
     public function loadCatalog(): void
     {
         try {
-            $this->catalog = app(PluginRegistry::class)->modules();
+            $this->catalog = app(PluginRegistry::class)->index();
             $this->catalogError = null;
         } catch (Throwable $e) {
             $this->catalog = [];
             $this->catalogError = $e->getMessage();
         }
+    }
+
+    /**
+     * Fetch the index again, ignoring the cached copy.
+     */
+    public function refreshRegistry(): void
+    {
+        try {
+            app(PluginRegistry::class)->forget();
+        } catch (Throwable) {
+            // The next fetch reports the real problem.
+        }
+
+        $this->loadCatalog();
     }
 
     public function setTab(string $tab): void
@@ -152,14 +247,26 @@ class Modules extends Page
     }
 
     /**
-     * Fetch the registry on first view, so opening the Catalog tab shows the
+     * Fetch the registry on first view of the Catalog tab, so it shows the
      * list straight away instead of an "already installed" message.
+     *
+     * The Installed tab never fetches: opening the page costs no network call,
+     * `refreshRegistry` is the only thing that reads the index.
      */
     public function mount(): void
     {
         if ($this->tab === 'catalog' && $this->catalog === null) {
             $this->loadCatalog();
         }
+    }
+
+    /**
+     * Whether the registry has been read at least once, so the Installed tab
+     * knows whether it can compare versions. Never fetches.
+     */
+    public function registryChecked(): bool
+    {
+        return app(PluginRegistry::class)->cached() !== null;
     }
 
     /**
@@ -240,6 +347,81 @@ class Modules extends Page
         }
     }
 
+    /**
+     * Replace an installed module with the registry's newer release.
+     *
+     * The files are staged and only swapped once the download, the extract and
+     * the module's composer install all succeeded, so a failure leaves the
+     * installed tree exactly as it was.
+     */
+    public function update(int $pluginId, PluginInstaller $installer): void
+    {
+        $plugin = Plugin::query()->find($pluginId);
+
+        if ($plugin === null) {
+            return;
+        }
+
+        $module = collect($this->cachedRegistry())->firstWhere('folder', $plugin->folder_name);
+
+        if ($module === null) {
+            Notification::make()->danger()->title(__('This module is not in the registry'))->send();
+
+            return;
+        }
+
+        try {
+            $registry = app(PluginRegistry::class);
+            $path = $registry->download($module);
+
+            try {
+                $plugin = $installer->update($plugin, $path);
+            } finally {
+                @unlink($path);
+            }
+
+            $installer->migrate($plugin);
+
+            Notification::make()
+                ->success()
+                ->title(__('Module updated'))
+                ->body(__(':name :version', ['name' => $plugin->name, 'version' => $plugin->version ?: '']))
+                ->send();
+        } catch (Throwable $e) {
+            Notification::make()
+                ->danger()
+                ->title(__('Update failed'))
+                ->body($e->getMessage())
+                ->persistent()
+                ->send();
+        }
+    }
+
+    /**
+     * Put the previous files back. The database schema and its data stay as
+     * they are; only the files and the recorded version go back.
+     */
+    public function rollback(int $pluginId, PluginInstaller $installer): void
+    {
+        $plugin = Plugin::query()->find($pluginId);
+
+        if ($plugin === null) {
+            return;
+        }
+
+        try {
+            $plugin = $installer->rollback($plugin);
+
+            Notification::make()
+                ->success()
+                ->title(__('Module restored'))
+                ->body(__(':name :version', ['name' => $plugin->name, 'version' => $plugin->version ?: '']))
+                ->send();
+        } catch (Throwable $e) {
+            Notification::make()->danger()->title(__('Rollback failed'))->body($e->getMessage())->send();
+        }
+    }
+
     public function uninstall(int $pluginId, PluginInstaller $installer): void
     {
         $plugin = Plugin::query()->find($pluginId);
@@ -304,7 +486,7 @@ class Modules extends Page
             return [];
         }
 
-        $migrationTable = 'migrations_'.str_replace('/', '_', $plugin->name);
+        $migrationTable = MigrationLedger::nameFor($plugin->name);
         $ran = Schema::hasTable($migrationTable)
             ? collect(Schema::getConnection()->table($migrationTable)->pluck('migration'))->all()
             : [];

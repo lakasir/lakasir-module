@@ -35,8 +35,6 @@ class Plugin extends Model
      */
     public function isSubmoduleCheckout(): bool
     {
-        $path = base_path('modules/'.$this->folder_name);
-
-        return is_file($path.'/.git') || is_file($path.'/../.git/modules/'.$this->folder_name.'/.git');
+        return isModuleDevCheckout(base_path('modules/'.$this->folder_name));
     }
 }
