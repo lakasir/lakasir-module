@@ -3,10 +3,9 @@
 namespace Lakasir\LakasirModule\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Lakasir\LakasirModule\Plugins\MigrationLedger;
 
 use function Laravel\Prompts\text;
 
@@ -48,50 +47,21 @@ class Migrate extends Command
 
             return;
         }
-        $packageName = str(getPackageModuleName($module))->replace('/', '_');
 
-        $migrationTable = 'migrations_'.$packageName;
-        config(['database.migrations' => $migrationTable]);
+        $migrationTable = MigrationLedger::nameFor(getPackageModuleName($module));
+        MigrationLedger::adopt($migrationTable, $migrationPath);
 
-        if (! Schema::hasTable($migrationTable)) {
-            $this->info("Migration table '{$migrationTable}' does not exist. Creating it...");
-            $this->createMigrationTable($migrationTable);
-        }
-
-        $options = $this->option();
-
-        $artisanOptions = [
-            '--realpath' => true,
-            '--path' => [$migrationPath],
-        ];
-
-        if ($options['refresh']) {
+        if ($this->option('refresh')) {
             $this->info("Refreshing migrations for module '{$module}'...");
-            Artisan::call('migrate:refresh', $artisanOptions);
-        } elseif ($options['rollback']) {
+            $ran = MigrationLedger::refresh($migrationTable, $migrationPath);
+        } elseif ($this->option('rollback')) {
             $this->info("Rolling back migrations for module '{$module}'...");
-            Artisan::call('migrate:rollback', $artisanOptions);
+            $ran = MigrationLedger::rollback($migrationTable, $migrationPath);
         } else {
             $this->info("Running migrations for module '{$module}'...");
-            Artisan::call('migrate', $artisanOptions);
+            $ran = MigrationLedger::run($migrationTable, $migrationPath);
         }
 
-        $this->info(Artisan::output());
-    }
-
-    /**
-     * Create the migration table if it doesn't exist.
-     *
-     * @return void
-     */
-    protected function createMigrationTable(string $tableName)
-    {
-        Schema::create($tableName, function ($table) {
-            $table->increments('id');
-            $table->string('migration');
-            $table->integer('batch');
-        });
-
-        $this->info("Migration table '{$tableName}' created successfully.");
+        $this->info($ran === [] ? 'Nothing to migrate.' : implode(PHP_EOL, $ran));
     }
 }
