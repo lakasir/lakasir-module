@@ -1,6 +1,5 @@
 {
     "name": "lakasir/lakasir-module",
-    "version": "1.0.0",
     "description": "",
     "keywords": [
         "lakasir",
@@ -51,7 +50,6 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Lakasir\\LakasirModule\\LakasirModuleServiceProvider",
                 "Lakasir\\LakasirModule\\LakasirModuleServiceProvider"
             ],
             "aliases": {
