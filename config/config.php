@@ -24,6 +24,12 @@ return [
     'timeout' => env('LAKASIR_MODULE_REGISTRY_TIMEOUT', 15),
 
     /*
+    | How long a successful index read is reused. Opening the Modules page
+    | reads the cache, never the network; the Refresh button drops it.
+    */
+    'registry_cache_ttl' => env('LAKASIR_MODULE_REGISTRY_CACHE_TTL', 3600),
+
+    /*
     |--------------------------------------------------------------------------
     | Archives
     |--------------------------------------------------------------------------
