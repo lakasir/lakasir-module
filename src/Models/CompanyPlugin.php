@@ -6,17 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Per-tenant installation state of a plugin.
+ * Per-company installation state of a plugin.
  *
- * Module migrations run inside each tenant database, so "migrated" is a
- * property of the pair, not of the plugin.
+ * A module's migrations belong to the shop that installed it, so "migrated" is
+ * a property of the pair rather than of the plugin.
  */
-class TenantPlugin extends Model
+class CompanyPlugin extends Model
 {
     protected $guarded = ['id'];
-
-    /** Central, like the plugin it belongs to. */
-    protected $connection = 'mysql';
 
     protected $casts = [
         'migrated_at' => 'datetime',

@@ -24,23 +24,22 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('tenant_plugins', function (Blueprint $table) {
+        Schema::create('company_plugins', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id');
-            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->unsignedBigInteger('company_id')->index();
             $table->foreignId('plugin_id')->constrained()->cascadeOnDelete();
             $table->string('version')->nullable();
             $table->string('migration_table')->nullable();
             $table->timestamp('migrated_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['tenant_id', 'plugin_id']);
+            $table->unique(['company_id', 'plugin_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('tenant_plugins');
+        Schema::dropIfExists('company_plugins');
         Schema::dropIfExists('plugins');
     }
 };

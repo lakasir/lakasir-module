@@ -16,12 +16,6 @@ class Plugin extends Model
 {
     protected $guarded = ['id'];
 
-    /**
-     * Plugin metadata is central: tenant databases carry only the migrations
-     * a plugin ran, tracked in `tenant_plugins`.
-     */
-    protected $connection = 'mysql';
-
     protected $casts = [
         'removed_at' => 'datetime',
     ];
@@ -30,9 +24,9 @@ class Plugin extends Model
 
     public const SOURCE_REGISTRY = 'registry';
 
-    public function tenantPlugins(): HasMany
+    public function companyPlugins(): HasMany
     {
-        return $this->hasMany(TenantPlugin::class);
+        return $this->hasMany(CompanyPlugin::class);
     }
 
     /**

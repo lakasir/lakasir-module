@@ -20,7 +20,6 @@ class LakasirModuleServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // The plugin system: archives, registry, per-tenant migrations.
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'lakasir-module');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 

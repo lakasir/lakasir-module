@@ -3,8 +3,8 @@
 namespace Lakasir\LakasirModule\Plugins;
 
 use Lakasir\LakasirModule\Models\Plugin;
-use Lakasir\LakasirModule\Models\TenantPlugin;
 use Illuminate\Database\Schema\Blueprint;
+use App\Models\Company;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -63,17 +63,16 @@ class PluginInstaller
             ],
         );
 
-        // A new version may ship new migrations, so every tenant starts over.
-        $plugin->tenantPlugins()->update(['migrated_at' => null]);
+        $plugin->companyPlugins()->update(['migrated_at' => null]);
 
         return $plugin;
     }
 
     /**
-     * Run the module's migrations inside every tenant database.
+     * Run the module's migrations for the shop in context.
      *
-     * Uses `lakasir-module:migrate`, which keeps each module's migrations in
-     * `migrations_<vendor>_<package>` so it can be rolled back on its own.
+     * Each module keeps its migrations in `migrations_<vendor>_<package>` so it
+     * can be rolled back on its own.
      */
     public function migrate(Plugin $plugin): void
     {
@@ -84,15 +83,12 @@ class PluginInstaller
         }
 
         $migrationTable = 'migrations_'.str_replace('/', '_', $plugin->name);
-        $tenantId = tenant()?->getTenantKey();
+        $companyId = Company::currentId();
 
-        if ($tenantId === null) {
-            throw new RuntimeException(__('A tenant context is required to migrate a module.'));
+        if ($companyId === null) {
+            throw new RuntimeException(__('A company context is required to migrate a module.'));
         }
 
-        // Already inside tenancy (the tenant panel initialises it), so run here
-        // rather than initialising again: a nested tenancy would close the
-        // caller's context and break the filesystem bootstrapper on end().
         if (! Schema::hasTable($migrationTable)) {
             $this->createMigrationTable($migrationTable);
         }
@@ -103,20 +99,19 @@ class PluginInstaller
             '--path' => $path,
             '--realpath' => true,
             '--force' => true,
-            '--database' => 'tenant',
         ]);
 
         $output = trim(Artisan::output());
 
-        $record = $plugin->tenantPlugins()->firstOrNew(['tenant_id' => $tenantId]);
+        $record = $plugin->companyPlugins()->firstOrNew(['company_id' => $companyId]);
         $record->version = $plugin->version;
         $record->migration_table = $migrationTable;
         $record->migrated_at = $exitCode === 0 ? now() : null;
         $record->save();
 
         if ($exitCode !== 0) {
-            throw new RuntimeException(__('Migration failed for tenant :tenant: :output', [
-                'tenant' => $tenantId,
+            throw new RuntimeException(__('Migration failed for company :company: :output', [
+                'company' => $companyId,
                 'output' => $output,
             ]));
         }
@@ -154,13 +149,11 @@ class PluginInstaller
 
         File::deleteDirectory($target);
 
-        // Re-running migrations after a reinstall must be harmless, and the
-        // ledger already records what ran, so the tenant rows are kept as-is.
         $plugin->forceFill(['removed_at' => now()])->save();
     }
 
     /**
-     * Delete the module's data for the current tenant, including the
+     * Delete the module's data for the current company, including the
      * migrations it recorded, so a later install migrates from scratch.
      *
      * @param  array<int, string>  $tables  tables the module created
@@ -181,10 +174,7 @@ class PluginInstaller
             Schema::enableForeignKeyConstraints();
         }
 
-        // The data is gone, so there is nothing left to remember: drop the
-        // per-tenant rows and the plugin record itself. Leaving them behind
-        // kept the module listed under "Removed, data kept" with nothing to keep.
-        $plugin->tenantPlugins()->delete();
+        $plugin->companyPlugins()->delete();
         $plugin->delete();
     }
 

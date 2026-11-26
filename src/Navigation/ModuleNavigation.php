@@ -128,7 +128,7 @@ class ModuleNavigation
     /**
      * The active panel's base path, with a leading slash (e.g. "/member").
      *
-     * Falls back to the tenant panel so a console call still resolves.
+     * Falls back to the shop panel so a console call still resolves.
      */
     public static function panelPath(): string
     {

@@ -2,6 +2,7 @@
 
 namespace Lakasir\LakasirModule\Filament\Pages;
 
+use App\Models\Company;
 use Lakasir\LakasirModule\Models\Plugin;
 use Lakasir\LakasirModule\Plugins\PluginArchiveInspector;
 use Lakasir\LakasirModule\Plugins\PluginInstaller;
@@ -65,11 +66,11 @@ class Modules extends Page
      */
     public function getModules(): array
     {
-        $plugins = Plugin::query()->with('tenantPlugins')->get()->keyBy('folder_name');
-        $tenantId = tenant()?->getKey();
+        $plugins = Plugin::query()->with('companyPlugins')->get()->keyBy('folder_name');
+        $companyId = Company::currentId();
 
         return collect(getModules())
-            ->map(function (string $path) use ($plugins, $tenantId): array {
+            ->map(function (string $path) use ($plugins, $companyId): array {
                 $folder = basename($path);
                 $composer = json_decode(@file_get_contents($path.'/composer.json') ?: '{}', true) ?: [];
                 $provider = "Modules\\{$folder}\\{$folder}ServiceProvider";
@@ -85,7 +86,7 @@ class Modules extends Page
                         : $folder,
                     'has_filament' => is_dir($path.'/src/Filament/Resources'),
                     'source' => is_dir($path.'/.git') ? 'git' : ($plugin?->source ?? 'local'),
-                    'migrated' => $plugin?->tenantPlugins->firstWhere('tenant_id', $tenantId)?->isMigrated() ?? false,
+                    'migrated' => $plugin?->companyPlugins->firstWhere('company_id', $companyId)?->isMigrated() ?? false,
                     'plugin_id' => $plugin?->getKey(),
                     'removed' => $plugin?->removed_at !== null,
                     'removable' => $plugin !== null && ! is_dir($path.'/.git'),
@@ -261,7 +262,7 @@ class Modules extends Page
     }
 
     /**
-     * Permanently delete a removed module's data for the current tenant.
+     * Permanently delete a removed module's data for the current company.
      *
      * The tables are the ones its migrations created, read from the ledger the
      * module wrote, so nothing outside the module is touched.
